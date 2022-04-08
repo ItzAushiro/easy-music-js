@@ -1,0 +1,43 @@
+const Command = require("../structures/command.js");
+const { MessageEmbed } = require('discord.js');
+const generatePages = require('../utils/embedPages.js');
+module.exports = new Command({
+	name: "help",
+	aliases: [],
+	description: "Affiche toutes les commandes du serveur",
+	permission: "SEND_MESSAGES",
+	async run(message, args, client, slash) {
+		const pages = [];
+        let page = 1, emptypage = false, commandInfo;
+        do {
+            const pageStart = 6 * (page - 1);
+            const pageEnd = pageStart + 6;
+            const commands = client.commands.slice(pageStart, pageEnd).map(cmd => {
+				commandInfo = `**${client.prefix}${cmd.name}**`;
+				if(cmd.options.length > 0) {
+					cmd.options.forEach(option => {
+						commandInfo = commandInfo.concat(` <${option.name}>`);
+					});
+				}
+				commandInfo = commandInfo.concat(`\n${cmd.description}\n`);
+				return commandInfo;
+			});
+            if(commands.length) {
+				const embed = new MessageEmbed();
+				embed.setAuthor({ name: `Listes des Commandes` });
+                embed.setDescription(`${commands.join('\n')}`);
+                embed.setColor(page%2 ? 'RANDOM' : 'RANDOM');
+                pages.push(embed);
+                page++;
+            }
+            else {
+                emptypage = true;
+                if(page === 2) {
+                    return message.reply({ embeds: [pages[0]] });
+                }
+            }
+        } while(!emptypage);
+
+		generatePages(message, pages, { timeout: 40000 });
+	}
+});
